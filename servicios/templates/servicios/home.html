@@ -251,20 +251,22 @@
         </section>
     </div>
 
-    <section class="fotos-servicios">
-        <div class="foto-card" data-aos="fade-up" data-aos-delay="100">
-            <img src="https://images.unsplash.com/photo-1621905235277-2270339f4010?auto=format&fit=crop&w=600&q=80" alt="Grúa Remolque">
-            <div class="foto-label">Traslados Larga Distancia</div>
-        </div>
-        <div class="foto-card" data-aos="fade-up" data-aos-delay="200">
-            <img src="https://images.unsplash.com/photo-1486006920555-c77dcf18193b?auto=format&fit=crop&w=600&q=80" alt="Mecánico">
-            <div class="foto-label">Mecánica de Ruta</div>
-        </div>
-        <div class="foto-card" data-aos="fade-up" data-aos-delay="300">
-            <img src="https://images.unsplash.com/photo-1544265852-a41561ca7014?auto=format&fit=crop&w=600&q=80" alt="Países Limítrofes">
-            <div class="foto-label">Países Limítrofes</div>
-        </div>
-    </section>
+    {% load static %} <section class="fotos-servicios">
+    <div class="foto-card" data-aos="fade-up" data-aos-delay="100">
+        <img src="{% static 'static/imagen1.jpeg' %}" alt="Grúa Remolque">
+        <div class="foto-label">Traslados Larga Distancia</div>
+    </div>
+
+    <div class="foto-card" data-aos="fade-up" data-aos-delay="200">
+        <img src="{% static 'static/imagen2.jpeg' %}" alt="Mecánica de Ruta">
+        <div class="foto-label">Mecánica de Ruta</div>
+    </div>
+
+    <div class="foto-card" data-aos="fade-up" data-aos-delay="300">
+        <img src="{% static 'static/imagen3.jpeg' %}" alt="Países Limítrofes">
+        <div class="foto-label">Países Limítrofes</div>
+    </div>
+</section>
 
     <section class="cobertura-bar" data-aos="fade-in">
         <div class="cobertura-container">
