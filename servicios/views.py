@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.contrib import messages # Para los carteles de éxito
+from django.contrib import messages
 from .models import Solicitud
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -15,8 +15,8 @@ def home(request):
         lat = request.POST.get('latitud')
         lng = request.POST.get('longitud')
 
-        # 2. Creamos la solicitud en la base de datos
-        Solicitud.objects.create(
+        # 2. Creamos la solicitud y la guardamos en una variable
+        nuevo_pedido = Solicitud.objects.create(
             vehiculo=vehiculo,
             tipo=tipo,
             ubicacion=ubicacion,
@@ -26,13 +26,14 @@ def home(request):
             cliente=request.user if request.user.is_authenticated else None
         )
 
-        # 3. Creamos el mensaje que verá el usuario
-        messages.success(request, "Solicitud enviada con éxito, espera tu respuesta")
+        # 3. Mensaje de éxito
+        messages.success(request, "Solicitud enviada con éxito. Seguimiento activado.")
         
-        # 4. Redirigimos al home (esto limpia el formulario y permite mostrar el mensaje)
-        return redirect('home')
+        # 4. IMPORTANTE: Renderizamos pasando el pedido recién creado 
+        # para que el mapa pueda leer las coordenadas.
+        return render(request, 'servicios/home.html', {'pedido': nuevo_pedido})
 
-    # Si es un GET (carga normal), solo renderizamos la página
+    # Si es un GET, carga normal
     return render(request, 'servicios/home.html')
 
 # API para que el mapa del cliente consulte la ubicación del Coyote
@@ -47,7 +48,7 @@ def info_seguimiento(request, solicitud_id):
     except Solicitud.DoesNotExist:
         return JsonResponse({'error': 'No encontrado'}, status=404)
 
-# VISTA PARA EL PANEL DEL CHOFER (VOS)
+# VISTA PARA EL PANEL DEL CHOFER
 def panel_chofer(request, solicitud_id):
     solicitud = get_object_or_404(Solicitud, id=solicitud_id)
     return render(request, 'servicios/panel_chofer.html', {'solicitud': solicitud})
@@ -59,6 +60,7 @@ def actualizar_ubicacion_grua(request, solicitud_id):
         try:
             data = json.loads(request.body)
             solicitud = get_object_or_404(Solicitud, id=solicitud_id)
+            # Actualizamos con los campos de tu modelo
             solicitud.latitud_coyote = data.get('lat')
             solicitud.longitud_coyote = data.get('lng')
             solicitud.save()

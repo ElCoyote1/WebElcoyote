@@ -365,25 +365,59 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         {% if messages %}
+            // MODO SEGUIMIENTO (Vista después de enviar el formulario)
             var latCli = parseFloat("{{ pedido.latitud|default:0 }}");
             var lngCli = parseFloat("{{ pedido.longitud|default:0 }}");
+            
+            // Usamos los nombres exactos que definiste en tu views.py y model
+            var latGrua = parseFloat("{{ pedido.latitud_coyote|default:0 }}");
+            var lngGrua = parseFloat("{{ pedido.longitud_coyote|default:0 }}");
+
             if(latCli !== 0) {
+                // Marcador del Cliente
                 L.marker([latCli, lngCli]).addTo(map).bindPopup("Tu ubicación").openPopup();
-                map.setView([latCli, lngCli], 15);
+                
+                // Marcador de la Grúa (si ya tiene ubicación)
+                if(latGrua !== 0 && !isNaN(latGrua)) {
+                    var gruaIcon = L.divIcon({
+                        html: '<i class="fas fa-truck-pickup" style="color: #000; font-size: 24px;"></i>',
+                        className: 'custom-div-icon',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+                    L.marker([latGrua, lngGrua], {icon: gruaIcon}).addTo(map).bindPopup("La Grúa está aquí").openPopup();
+                    
+                    // Ajustar mapa para que se vean los dos puntos
+                    var bounds = L.latLngBounds([[latCli, lngCli], [latGrua, lngGrua]]);
+                    map.fitBounds(bounds, {padding: [50, 50]});
+                } else {
+                    map.setView([latCli, lngCli], 15);
+                }
             }
+
+            // OPCIONAL: Auto-recarga cada 10 segundos para ver el movimiento sin refrescar manual
+            setTimeout(function(){
+               location.reload();
+            }, 10000);
+
         {% else %}
+            // MODO SOLICITUD (Vista inicial del formulario)
             var marker = L.marker([-34.6037, -58.3816], { draggable: true }).addTo(map);
+            
             function updateCoords(lat, lng) {
                 document.getElementById('lat').value = lat;
                 document.getElementById('lng').value = lng;
             }
+            
             marker.on('dragend', function(e) {
                 updateCoords(e.target.getLatLng().lat, e.target.getLatLng().lng);
             });
+            
             map.on('click', function(e) {
                 marker.setLatLng(e.latlng);
                 updateCoords(e.latlng.lat, e.latlng.lng);
             });
+            
             function getLocation() {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(function(position) {
