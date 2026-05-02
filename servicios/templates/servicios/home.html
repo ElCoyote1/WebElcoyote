@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auxilio El Coyote | Traslados Nacionales e Internacionales</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+    :root {
+        --coyote-neon: #ccff00; 
+        --coyote-dark: #1a1a1a;
+        --whatsapp-green: #25d366;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #ffffff;
+        margin: 0;
+        color: var(--coyote-dark);
+        overflow-x: hidden;
+    }
+
+    /* Animación Coyote Corriendo */
+    .coyote-run-container {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .coyote-sprite {
+        position: absolute;
+        bottom: 10%;
+        width: 180px;
+        z-index: 1;
+        opacity: 0.4;
+        pointer-events: none;
+        animation: coyoteCarrera 6s linear infinite;
+    }
+
+    @keyframes coyoteCarrera {
+        0% { left: -200px; }
+        100% { left: 110%; }
+    }
+
+    .whatsapp-float {
+        position: fixed; width: 65px; height: 65px; bottom: 30px; right: 30px;
+        background-color: var(--whatsapp-green); color: #FFF; border-radius: 50px;
+        text-align: center; font-size: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        z-index: 1000; display: flex; align-items: center; justify-content: center;
+        text-decoration: none; animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
+    .header {
+        background-color: #ccff00;
+        border-bottom: 5px solid var(--coyote-neon);
+        padding: 0.8rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        font-family: 'Black Han Sans', sans-serif;
+        text-decoration: none;
+    }
+    .logo i { color: var(--coyote-dark); font-size: 1.8rem; }
+    .logo h3 { margin-left: 10px; font-size: 1.5rem; color: #000; margin-bottom: 0; text-transform: uppercase; }
+
+    .phone-btn {
+        background-color: var(--coyote-dark);
+        color: var(--coyote-neon);
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 2px solid var(--coyote-dark);
+        transition: 0.3s;
+    }
+    .phone-btn:hover {
+        background-color: var(--coyote-neon);
+        color: var(--coyote-dark);
+    }
+
+    .hero {
+        background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.85)), url('https://images.unsplash.com/photo-1562141989-c5c79ac8f576?auto=format&fit=crop&w=1350&q=80');
+        background-size: cover; background-position: center; background-attachment: fixed;
+        padding: 100px 20px; text-align: center;
+    }
+
+    .hero-badge, .hero-title { position: relative; z-index: 2; }
+
+    .hero-badge {
+        background: #000; color: #fff; display: inline-block;
+        padding: 6px 18px; font-weight: 900; margin-bottom: 20px; letter-spacing: 1px;
+    }
+
+    .hero-title {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 4.5rem; color: #000; margin-bottom: 15px; line-height: 1;
+    }
+
+    .fotos-servicios {
+        max-width: 1200px; margin: 40px auto;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px; padding: 0 20px;
+    }
+
+    .foto-card { border: 3px solid #000; overflow: hidden; position: relative; }
+    .foto-card img { width: 100%; height: 250px; object-fit: cover; display: block; transition: 0.3s; }
+    .foto-card:hover img { transform: scale(1.05); }
+    .foto-label {
+        background: var(--coyote-neon); color: #000; padding: 10px;
+        font-weight: 900; text-align: center; border-top: 3px solid #000; text-transform: uppercase;
+    }
+
+    .cobertura-bar {
+        background-color: var(--coyote-dark); color: #fff; padding: 30px 0;
+        text-align: center; border-bottom: 6px solid var(--coyote-neon);
+    }
+    .cobertura-container { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
+    .cobertura-item { display: flex; align-items: center; gap: 15px; font-weight: 800; text-transform: uppercase; font-size: 1.1rem; }
+    .cobertura-item i { color: var(--coyote-neon); font-size: 1.8rem; }
+
+    #map-wrapper { position: relative; margin: 15px 0 25px 0; }
+    #map { 
+        height: 350px; width: 100%; border: 3px solid #000; 
+        box-shadow: 10px 10px 0px var(--coyote-neon); z-index: 1;
+    }
+    .btn-gps {
+        position: absolute; top: 10px; right: 10px; z-index: 1000;
+        background: #000; color: var(--coyote-neon); border: 2px solid #000;
+        padding: 10px 15px; cursor: pointer; font-weight: 900; font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+    .tracking-badge {
+        background: #000; color: var(--coyote-neon); padding: 15px;
+        text-align: center; font-weight: 900; margin-bottom: 20px; border: 3px solid #000;
+    }
+
+    .contact { padding: 80px 20px; background: #fdfdfd; }
+    .contact-form {
+        max-width: 750px; margin: 0 auto; background: #fff;
+        padding: 50px; border: 4px solid #000; box-shadow: 18px 18px 0px var(--coyote-neon);
+    }
+
+    .contact-form h2 { font-family: 'Black Han Sans', sans-serif; text-align: center; font-size: 2.5rem; margin-bottom: 40px; text-transform: uppercase; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 900; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 10px; color: #000; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 18px; border: 3px solid #000; font-family: 'Inter', sans-serif; font-weight: 600; box-sizing: border-box; }
+
+    .btn-enviar {
+        width: 100%; background: var(--coyote-neon); color: #000; padding: 22px;
+        border: 3px solid #000; font-weight: 900; font-size: 1.5rem; cursor: pointer;
+        text-transform: uppercase; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 15px;
+    }
+    .btn-enviar:hover { background: #000; color: var(--coyote-neon); transform: translate(-6px, -6px); box-shadow: 10px 10px 0px var(--coyote-neon); }
+
+    /* BOTÓN ADMIN SUTIL */
+    .admin-float {
+        position: fixed; 
+        bottom: 20px; 
+        left: 20px; 
+        width: 35px;    
+        height: 35px;   
+        background-color: rgba(0, 0, 0, 0.15); /* Muy tenue */
+        color: rgba(0, 0, 0, 0.4);            /* Color suave */
+        border-radius: 6px;
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        text-decoration: none; 
+        z-index: 9999; /* Por encima de todo */
+        transition: all 0.4s ease;
+        font-size: 0.9rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-float:hover { 
+        background-color: var(--coyote-dark); 
+        color: var(--coyote-neon); 
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    footer {
+        background: #000; color: var(--coyote-neon); text-align: center;
+        padding: 40px 20px; font-weight: 900; border-top: 5px solid var(--coyote-neon);
+    }
+
+    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .hero-title { font-size: 2.8rem; } }
+    </style>
+</head>
+<body>
+
+    <a href="https://wa.me/5491112345678" class="whatsapp-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-truck-pickup"></i>
+                <h3>AUXILIO EL COYOTE</h3>
+            </a>
+            <a href="#contact" class="phone-btn">
+                <i class="fas fa-file-signature"></i> SOLICITAR GRÚA
+            </a>
+        </nav>
+    </header>
+
+    <div class="coyote-run-container">
+        <img src="https://media.tenor.com/tYt6F4-t_mYAAAAd/aric-diecaster.gif" class="coyote-sprite" alt="Coyote">
+        
+        <section class="hero">
+            <div class="hero-badge" data-aos="zoom-in">EMERGENCIAS MECÁNICAS 24/7</div>
+            <h1 class="hero-title" data-aos="fade-up">¿TE QUEDASTE? <br><span style="color: #000; text-decoration: underline var(--coyote-neon);">EL COYOTE VA.</span></h1>
+            <p style="font-size: 1.4rem; font-weight: 700; color: #333; max-width: 800px; margin: 0 auto; position: relative; z-index: 2;" data-aos="fade-up" data-aos-delay="200">
+                Asistencia profesional inmediata para autos, motos y camionetas. 
+                Llegamos donde otros no llegan.
+            </p>
+        </section>
+    </div>
+
+    <section class="fotos-servicios">
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="100">
+            <img src="https://images.unsplash.com/photo-1621905235277-2270339f4010?auto=format&fit=crop&w=600&q=80" alt="Grúa Remolque">
+            <div class="foto-label">Traslados Larga Distancia</div>
+        </div>
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="200">
+            <img src="https://images.unsplash.com/photo-1486006920555-c77dcf18193b?auto=format&fit=crop&w=600&q=80" alt="Mecánico">
+            <div class="foto-label">Mecánica de Ruta</div>
+        </div>
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="300">
+            <img src="https://images.unsplash.com/photo-1544265852-a41561ca7014?auto=format&fit=crop&w=600&q=80" alt="Países Limítrofes">
+            <div class="foto-label">Países Limítrofes</div>
+        </div>
+    </section>
+
+    <section class="cobertura-bar" data-aos="fade-in">
+        <div class="cobertura-container">
+            <div class="cobertura-item" data-aos="zoom-in" data-aos-delay="100"><i class="fas fa-map-marked-alt"></i> Todo el país</div>
+            <div class="cobertura-item" data-aos="zoom-in" data-aos-delay="200"><i class="fas fa-globe-americas"></i> Países limítrofes</div>
+            <div class="cobertura-item" data-aos="zoom-in" data-aos-delay="300"><i class="fas fa-shield-alt"></i> Seguro de Carga</div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="contact-form" data-aos="fade-right">
+            
+            {% if pedido_exitoso %}
+                <div class="tracking-badge">
+                    <i class="fas fa-truck-moving fa-beat"></i> COYOTE EN CAMINO - SEGUIMIENTO EN VIVO
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <a href="{{ whatsapp_url }}" target="_blank" style="background: var(--whatsapp-green); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-whatsapp"></i> ENVIAR DATOS POR WHATSAPP
+                    </a>
+                </div>
+
+                <div id="map-wrapper">
+                    <div id="map"></div>
+                </div>
+                <p style="text-align: center; font-weight: 800; text-transform: uppercase;">Llegamos a tu ubicación en breve.</p>
+            {% else %}
+                <h2>Solicitar Servicio</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>1. Marcá tu ubicación exacta *</label>
+                        <div id="map-wrapper">
+                            <div id="map"></div>
+                            <button type="button" class="btn-gps" onclick="getLocation()">
+                                <i class="fas fa-crosshairs"></i> Mi GPS
+                            </button>
+                        </div>
+                        <input type="hidden" name="latitud" id="lat" required>
+                        <input type="hidden" name="longitud" id="lng" required>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>2. Tu Vehículo *</label>
+                            <input type="text" name="vehiculo" placeholder="Ej: VW Amarok" required>
+                        </div>
+                        <div class="form-group">
+                            <label>3. Tipo de Auxilio *</label>
+                            <select name="tipo" required>
+                                <option value="" disabled selected>Seleccioná...</option>
+                                <option value="GRU">Grúa (Larga Distancia)</option>
+                                <option value="GRU">Grúa (Local)</option>
+                                <option value="BAT">Batería</option>
+                                <option value="MEC">Mecánica</option>
+                                <option value="NEU">Neumáticos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>4. Destino Final *</label>
+                        <input type="text" name="ubicacion" placeholder="¿A dónde vamos?" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>5. Descripción</label>
+                        <textarea name="descripcion" rows="3" placeholder="Problema breve..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-enviar">
+                        <i class="fas fa-truck-moving"></i> Solicitar Auxilio Ahora
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer>
+        <p style="margin-bottom: 10px; font-size: 1.2rem;">🌵 AUXILIO EL COYOTE</p>
+        <p style="margin:0; opacity: 0.8; font-size: 0.9rem;">© 2026 VELOCIDAD Y ASTUCIA SIN FRONTERAS</p>
+    </footer>
+
+    <a href="/admin/" class="admin-float" title="Panel de Administración">
+        <i class="fas fa-user-shield"></i>
+    </a>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ duration: 800, once: true });
+
+        var map = L.map('map').setView([-34.6037, -58.3816], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        {% if pedido_exitoso %}
+            var latCli = parseFloat("{{ pedido.latitud|default:0 }}");
+            var lngCli = parseFloat("{{ pedido.longitud|default:0 }}");
+            if(latCli !== 0) {
+                L.marker([latCli, lngCli]).addTo(map).bindPopup("Tu ubicación").openPopup();
+                map.setView([latCli, lngCli], 15);
+            }
+        {% else %}
+            var marker = L.marker([-34.6037, -58.3816], { draggable: true }).addTo(map);
+            function updateCoords(lat, lng) {
+                document.getElementById('lat').value = lat;
+                document.getElementById('lng').value = lng;
+            }
+            marker.on('dragend', function(e) {
+                updateCoords(e.target.getLatLng().lat, e.target.getLatLng().lng);
+            });
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                updateCoords(e.latlng.lat, e.latlng.lng);
+            });
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        var lat = position.coords.latitude;
+                        var lng = position.coords.longitude;
+                        map.setView([lat, lng], 17);
+                        marker.setLatLng([lat, lng]);
+                        updateCoords(lat, lng);
+                    });
+                }
+            }
+            window.onload = getLocation;
+        {% endif %}
+    </script>
+</body>
+</html>

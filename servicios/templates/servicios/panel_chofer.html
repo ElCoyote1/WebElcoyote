@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Coyote | En Camino</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; padding: 20px; }
+        .btn { background: #ccff00; color: black; padding: 20px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2rem; cursor: pointer; width: 100%; }
+        .status { margin-top: 20px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h2>Coyote: {{ solicitud.vehiculo }}</h2>
+    <p>Destino: {{ solicitud.ubicacion }}</p>
+    
+    <button id="btnGps" class="btn" onclick="toggleGps()">COMPARTIR MI UBICACIÓN</button>
+    <div id="status" class="status">GPS: Desactivado</div>
+
+    <script>
+        let watchId = null;
+        function toggleGps() {
+            const btn = document.getElementById('btnGps');
+            const status = document.getElementById('status');
+
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                btn.innerText = "COMPARTIR MI UBICACIÓN";
+                btn.style.background = "#ccff00";
+                status.innerText = "GPS: Desactivado";
+            } else {
+                watchId = navigator.geolocation.watchPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    
+                    fetch(`/api/actualizar-gps/{{ solicitud.id }}/`, {
+                        method: 'POST',
+                        body: JSON.stringify({lat: lat, lng: lng}),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    status.innerText = "GPS: Transmitiendo en vivo...";
+                }, null, { enableHighAccuracy: true });
+
+                btn.innerText = "DETENER TRANSMISIÓN";
+                btn.style.background = "#ff4444";
+            }
+        }
+    </script>
+</body>
+</html>
