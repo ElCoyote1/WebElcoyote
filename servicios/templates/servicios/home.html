@@ -1,3 +1,5 @@
+{% load l10n %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -184,21 +186,20 @@
     }
     .btn-enviar:hover { background: #000; color: var(--coyote-neon); transform: translate(-6px, -6px); box-shadow: 10px 10px 0px var(--coyote-neon); }
 
-    /* BOTÓN ADMIN SUTIL */
     .admin-float {
         position: fixed; 
         bottom: 20px; 
         left: 20px; 
         width: 35px;    
         height: 35px;   
-        background-color: rgba(0, 0, 0, 0.15); /* Muy tenue */
-        color: rgba(0, 0, 0, 0.4);            /* Color suave */
+        background-color: rgba(0, 0, 0, 0.15); 
+        color: rgba(0, 0, 0, 0.4);            
         border-radius: 6px;
         display: flex; 
         align-items: center; 
         justify-content: center;
         text-decoration: none; 
-        z-index: 9999; /* Por encima de todo */
+        z-index: 9999; 
         transition: all 0.4s ease;
         font-size: 0.9rem;
         border: 1px solid rgba(0, 0, 0, 0.05);
@@ -250,22 +251,22 @@
         </section>
     </div>
 
-    {% load static %} <section class="fotos-servicios">
-    <div class="foto-card" data-aos="fade-up" data-aos-delay="100">
-        <img src="{% static 'servicios/imagen1.jpeg' %}" alt="Grúa Remolque">
-        <div class="foto-label">Traslados Larga Distancia</div>
-    </div>
+    <section class="fotos-servicios">
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="100">
+            <img src="{% static 'servicios/imagen1.jpeg' %}" alt="Grúa Remolque">
+            <div class="foto-label">Traslados Larga Distancia</div>
+        </div>
 
-    <div class="foto-card" data-aos="fade-up" data-aos-delay="200">
-        <img src="{% static 'servicios/imagen2.jpeg' %}" alt="Mecánica de Ruta">
-        <div class="foto-label">Mecánica de Ruta</div>
-    </div>
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="200">
+            <img src="{% static 'servicios/imagen2.jpeg' %}" alt="Mecánica de Ruta">
+            <div class="foto-label">Mecánica de Ruta</div>
+        </div>
 
-    <div class="foto-card" data-aos="fade-up" data-aos-delay="300">
-        <img src="{% static 'servicios/imagen3.jpeg' %}" alt="Países Limítrofes">
-        <div class="foto-label">Países Limítrofes</div>
-    </div>
-</section>
+        <div class="foto-card" data-aos="fade-up" data-aos-delay="300">
+            <img src="{% static 'servicios/imagen3.jpeg' %}" alt="Países Limítrofes">
+            <div class="foto-label">Países Limítrofes</div>
+        </div>
+    </section>
 
     <section class="cobertura-bar" data-aos="fade-in">
         <div class="cobertura-container">
@@ -365,59 +366,47 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         {% if messages %}
-            // MODO SEGUIMIENTO (Vista después de enviar el formulario)
-            var latCli = parseFloat("{{ pedido.latitud|default:0 }}");
-            var lngCli = parseFloat("{{ pedido.longitud|default:0 }}");
-            
-            // Usamos los nombres exactos que definiste en tu views.py y model
-            var latGrua = parseFloat("{{ pedido.latitud_coyote|default:0 }}");
-            var lngGrua = parseFloat("{{ pedido.longitud_coyote|default:0 }}");
+            // MODO SEGUIMIENTO
+            var latCli = parseFloat("{{ pedido.latitud|unlocalize }}");
+            var lngCli = parseFloat("{{ pedido.longitud|unlocalize }}");
+            var latGrua = parseFloat("{{ pedido.latitud_coyote|unlocalize|default:'0' }}");
+            var lngGrua = parseFloat("{{ pedido.longitud_coyote|unlocalize|default:'0' }}");
 
-            if(latCli !== 0) {
-                // Marcador del Cliente
+            if(!isNaN(latCli) && latCli !== 0) {
                 L.marker([latCli, lngCli]).addTo(map).bindPopup("Tu ubicación").openPopup();
                 
-                // Marcador de la Grúa (si ya tiene ubicación)
-                if(latGrua !== 0 && !isNaN(latGrua)) {
+                if(!isNaN(latGrua) && latGrua !== 0) {
                     var gruaIcon = L.divIcon({
                         html: '<i class="fas fa-truck-pickup" style="color: #000; font-size: 24px;"></i>',
                         className: 'custom-div-icon',
                         iconSize: [30, 30],
                         iconAnchor: [15, 15]
                     });
-                    L.marker([latGrua, lngGrua], {icon: gruaIcon}).addTo(map).bindPopup("La Grúa está aquí").openPopup();
+                    L.marker([latGrua, lngGrua], {icon: gruaIcon}).addTo(map).bindPopup("El Coyote está en camino");
                     
-                    // Ajustar mapa para que se vean los dos puntos
                     var bounds = L.latLngBounds([[latCli, lngCli], [latGrua, lngGrua]]);
                     map.fitBounds(bounds, {padding: [50, 50]});
                 } else {
                     map.setView([latCli, lngCli], 15);
                 }
             }
-
-            // OPCIONAL: Auto-recarga cada 10 segundos para ver el movimiento sin refrescar manual
-            setTimeout(function(){
-               location.reload();
-            }, 10000);
+            // Refresco automático para ver movimiento
+            setTimeout(function(){ location.reload(true); }, 15000);
 
         {% else %}
-            // MODO SOLICITUD (Vista inicial del formulario)
+            // MODO FORMULARIO
             var marker = L.marker([-34.6037, -58.3816], { draggable: true }).addTo(map);
-            
             function updateCoords(lat, lng) {
                 document.getElementById('lat').value = lat;
                 document.getElementById('lng').value = lng;
             }
-            
             marker.on('dragend', function(e) {
                 updateCoords(e.target.getLatLng().lat, e.target.getLatLng().lng);
             });
-            
             map.on('click', function(e) {
                 marker.setLatLng(e.latlng);
                 updateCoords(e.latlng.lat, e.latlng.lng);
             });
-            
             function getLocation() {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(function(position) {
