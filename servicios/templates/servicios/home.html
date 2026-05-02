@@ -100,8 +100,7 @@
         text-decoration: none;
         font-weight: 900;
         display: flex;
-        align-items: center;
-        gap: 10px;
+        align-items: center; gap: 10px;
         border: 2px solid var(--coyote-dark);
         transition: 0.3s;
     }
@@ -279,13 +278,15 @@
     <section id="contact" class="contact">
         <div class="contact-form" data-aos="fade-right">
             
-            {% if pedido_exitoso %}
+            {% if messages %}
+                {% for message in messages %}
                 <div class="tracking-badge">
-                    <i class="fas fa-truck-moving fa-beat"></i> COYOTE EN CAMINO - SEGUIMIENTO EN VIVO
+                    <i class="fas fa-truck-moving fa-beat"></i> {{ message }}
                 </div>
+                {% endfor %}
                 
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <a href="{{ whatsapp_url }}" target="_blank" style="background: var(--whatsapp-green); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 10px;">
+                    <a href="https://wa.me/5491112345678" target="_blank" style="background: var(--whatsapp-green); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 10px;">
                         <i class="fab fa-whatsapp"></i> ENVIAR DATOS POR WHATSAPP
                     </a>
                 </div>
@@ -363,7 +364,7 @@
         var map = L.map('map').setView([-34.6037, -58.3816], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        {% if pedido_exitoso %}
+        {% if messages %}
             var latCli = parseFloat("{{ pedido.latitud|default:0 }}");
             var lngCli = parseFloat("{{ pedido.longitud|default:0 }}");
             if(latCli !== 0) {

@@ -1,12 +1,13 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.contrib import messages # Para los carteles de éxito
 from .models import Solicitud
 from django.views.decorators.csrf import csrf_exempt
 import json
 
 def home(request):
-    context = {}
     if request.method == 'POST':
+        # 1. Capturamos los datos del formulario
         vehiculo = request.POST.get('vehiculo')
         tipo = request.POST.get('tipo')
         ubicacion = request.POST.get('ubicacion')
@@ -14,7 +15,8 @@ def home(request):
         lat = request.POST.get('latitud')
         lng = request.POST.get('longitud')
 
-        nueva_solicitud = Solicitud.objects.create(
+        # 2. Creamos la solicitud en la base de datos
+        Solicitud.objects.create(
             vehiculo=vehiculo,
             tipo=tipo,
             ubicacion=ubicacion,
@@ -24,10 +26,14 @@ def home(request):
             cliente=request.user if request.user.is_authenticated else None
         )
 
-        context['pedido_exitoso'] = True
-        context['pedido'] = nueva_solicitud
+        # 3. Creamos el mensaje que verá el usuario
+        messages.success(request, "Solicitud enviada con éxito, espera tu respuesta")
         
-    return render(request, 'servicios/home.html', context)
+        # 4. Redirigimos al home (esto limpia el formulario y permite mostrar el mensaje)
+        return redirect('home')
+
+    # Si es un GET (carga normal), solo renderizamos la página
+    return render(request, 'servicios/home.html')
 
 # API para que el mapa del cliente consulte la ubicación del Coyote
 def info_seguimiento(request, solicitud_id):
