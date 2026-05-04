@@ -44,10 +44,8 @@ def avisar_al_dueno(pedido, request):
         print(f"Error de conexión con WhatsApp: {e}")
 
 
-# 1. VISTA PRINCIPAL: Recibe el pedido y dispara la notificación
 def home(request):
     if request.method == 'POST':
-        # Capturamos los datos del formulario
         vehiculo = request.POST.get('vehiculo')
         tipo = request.POST.get('tipo')
         ubicacion = request.POST.get('ubicacion')
@@ -55,7 +53,7 @@ def home(request):
         lat = request.POST.get('latitud')
         lng = request.POST.get('longitud')
 
-        # Creamos la solicitud en la base de datos
+        # 1. Creamos el pedido
         nuevo_pedido = Solicitud.objects.create(
             vehiculo=vehiculo,
             tipo=tipo,
@@ -66,19 +64,18 @@ def home(request):
             cliente=request.user if request.user.is_authenticated else None
         )
 
-        # MANDAR EL WHATSAPP AL DUEÑO AUTOMÁTICAMENTE
+        # 2. INTENTO DE WHATSAPP (Si falla, no rompe la página)
         try:
             avisar_al_dueno(nuevo_pedido, request)
         except Exception as e:
-            print(f"Error al enviar notificación: {e}")
+            # Esto solo sale en la consola de Render, el usuario no ve el error
+            print(f"DEBUG: El WhatsApp no se envió pero el pedido sigue: {e}")
 
+        # 3. Éxito y Renderizado
         messages.success(request, "Solicitud enviada con éxito. Seguimiento activado.")
-        
-        # Pasamos 'pedido' al template para que el cliente vea su mapa
         return render(request, 'servicios/home.html', {'pedido': nuevo_pedido})
 
     return render(request, 'servicios/home.html')
-
 
 # 2. VISTA PARA EL PANEL DEL CHOFER: Donde el chofer comparte su GPS
 def panel_chofer(request, solicitud_id):
