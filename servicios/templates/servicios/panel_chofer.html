@@ -5,46 +5,119 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Coyote | En Camino</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; padding: 20px; }
-        .btn { background: #ccff00; color: black; padding: 20px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2rem; cursor: pointer; width: 100%; }
-        .status { margin-top: 20px; color: #aaa; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+            margin: 0;
+        }
+        .container { max-width: 500px; margin: auto; }
+        h2 { color: #ccff00; margin-bottom: 10px; }
+        .info-card { background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
+        .btn { 
+            background: #ccff00; 
+            color: black; 
+            padding: 20px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            cursor: pointer; 
+            width: 100%; 
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(204, 255, 0, 0.2);
+        }
+        .btn:active { transform: scale(0.98); }
+        .status { margin-top: 20px; color: #aaa; font-style: italic; }
+        .coord-display { font-family: monospace; font-size: 0.8rem; color: #555; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <h2>Coyote: {{ solicitud.vehiculo }}</h2>
-    <p>Destino: {{ solicitud.ubicacion }}</p>
-    
-    <button id="btnGps" class="btn" onclick="toggleGps()">COMPARTIR MI UBICACIÓN</button>
-    <div id="status" class="status">GPS: Desactivado</div>
+    <div class="container">
+        <h2>Coyote: {{ solicitud.vehiculo }}</h2>
+        
+        <div class="info-card">
+            <p><strong>Destino:</strong><br>{{ solicitud.ubicacion }}</p>
+        </div>
+        
+        <button id="btnGps" class="btn" onclick="toggleGps()">COMPARTIR MI UBICACIÓN</button>
+        
+        <div id="status" class="status">GPS: Desactivado</div>
+        <div id="coords" class="coord-display"></div>
+    </div>
 
     <script>
         let watchId = null;
-        function toggleGps() {
-            const btn = document.getElementById('btnGps');
-            const status = document.getElementById('status');
+        const btn = document.getElementById('btnGps');
+        const status = document.getElementById('status');
+        const coordsDiv = document.getElementById('coords');
 
+        function toggleGps() {
             if (watchId) {
+                // DETENER TRANSMISIÓN
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
                 btn.innerText = "COMPARTIR MI UBICACIÓN";
                 btn.style.background = "#ccff00";
                 status.innerText = "GPS: Desactivado";
+                coordsDiv.innerText = "";
             } else {
+                // INICIAR TRANSMISIÓN
+                if (!navigator.geolocation) {
+                    alert("Tu navegador no soporta geolocalización.");
+                    return;
+                }
+
+                status.innerText = "Buscando señal GPS...";
+                
                 watchId = navigator.geolocation.watchPosition(pos => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
                     
+                    // Mostrar coordenadas locales para que el chofer vea que funciona
+                    coordsDiv.innerText = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
+                    
+                    // ENVÍO A DJANGO
                     fetch(`/api/actualizar-gps/{{ solicitud.id }}/`, {
                         method: 'POST',
-                        body: JSON.stringify({lat: lat, lng: lng}),
-                        headers: { 'Content-Type': 'application/json' }
+                        body: JSON.stringify({
+                            lat: lat, 
+                            lng: lng
+                        }),
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            // IMPORTANTE: Token de seguridad de Django
+                            'X-CSRFToken': '{{ csrf_token }}' 
+                        }
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            status.innerText = "GPS: Transmitiendo en vivo...";
+                            status.style.color = "#ccff00";
+                        } else {
+                            status.innerText = "Error de servidor (403/500)";
+                            status.style.color = "#ff4444";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        status.innerText = "Error de conexión...";
                     });
                     
-                    status.innerText = "GPS: Transmitiendo en vivo...";
-                }, null, { enableHighAccuracy: true });
+                }, error => {
+                    console.warn("Error GPS: ", error.message);
+                    status.innerText = "Error: Habilita el GPS en tu celular.";
+                }, { 
+                    enableHighAccuracy: true, // Máxima precisión
+                    maximumAge: 0, 
+                    timeout: 5000 
+                });
 
                 btn.innerText = "DETENER TRANSMISIÓN";
                 btn.style.background = "#ff4444";
+                btn.style.color = "white";
             }
         }
     </script>

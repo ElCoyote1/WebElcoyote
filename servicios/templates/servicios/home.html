@@ -366,35 +366,55 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         {% if messages %}
-            // MODO SEGUIMIENTO
+            // MODO SEGUIMIENTO DINÁMICO
             var latCli = parseFloat("{{ pedido.latitud|unlocalize }}");
             var lngCli = parseFloat("{{ pedido.longitud|unlocalize }}");
-            var latGrua = parseFloat("{{ pedido.latitud_coyote|unlocalize|default:'0' }}");
-            var lngGrua = parseFloat("{{ pedido.longitud_coyote|unlocalize|default:'0' }}");
+            var solicitudId = "{{ pedido.id }}";
+            var markerCoyote = null;
 
-            if(!isNaN(latCli) && latCli !== 0) {
-                L.marker([latCli, lngCli]).addTo(map).bindPopup("Tu ubicación").openPopup();
-                
-                if(!isNaN(latGrua) && latGrua !== 0) {
-                    var gruaIcon = L.divIcon({
-                        html: '<i class="fas fa-truck-pickup" style="color: #000; font-size: 24px;"></i>',
-                        className: 'custom-div-icon',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-                    L.marker([latGrua, lngGrua], {icon: gruaIcon}).addTo(map).bindPopup("El Coyote está en camino");
-                    
-                    var bounds = L.latLngBounds([[latCli, lngCli], [latGrua, lngGrua]]);
-                    map.fitBounds(bounds, {padding: [50, 50]});
-                } else {
-                    map.setView([latCli, lngCli], 15);
-                }
+            // Marcador del Cliente (Estático)
+            L.marker([latCli, lngCli]).addTo(map).bindPopup("Tu ubicación").openPopup();
+            map.setView([latCli, lngCli], 15);
+
+            // Icono de la grúa para el Coyote
+            var gruaIcon = L.divIcon({
+                html: '<i class="fas fa-truck-pickup" style="color: #000; font-size: 24px; text-shadow: 0 0 5px #ccff00;"></i>',
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            function actualizarPosicionReal() {
+                // Consultamos la API de seguimiento (definida en urls.py)
+                fetch(`/api/seguimiento/${solicitudId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.latitud_coyote && data.longitud_coyote) {
+                            var newPos = [data.latitud_coyote, data.longitud_coyote];
+                            
+                            if (markerCoyote === null) {
+                                // Si no existe el Coyote en el mapa, lo creamos
+                                markerCoyote = L.marker(newPos, {icon: gruaIcon}).addTo(map)
+                                                .bindPopup("El Coyote está en camino").openPopup();
+                            } else {
+                                // Si ya existe, lo movemos a la nueva posición
+                                markerCoyote.setLatLng(newPos);
+                            }
+
+                            // Ajustamos el zoom para ver a ambos
+                            var bounds = L.latLngBounds([[latCli, lngCli], newPos]);
+                            map.fitBounds(bounds, {padding: [50, 50]});
+                        }
+                    })
+                    .catch(err => console.error("Error siguiendo al Coyote:", err));
             }
-            // Refresco automático para ver movimiento
-            setTimeout(function(){ location.reload(true); }, 15000);
+
+            // Actualizar cada 5 segundos
+            setInterval(actualizarPosicionReal, 5000);
+            actualizarPosicionReal();
 
         {% else %}
-            // MODO FORMULARIO
+            // MODO FORMULARIO (TAL CUAL LO TENÍAS)
             var marker = L.marker([-34.6037, -58.3816], { draggable: true }).addTo(map);
             function updateCoords(lat, lng) {
                 document.getElementById('lat').value = lat;
