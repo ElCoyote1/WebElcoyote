@@ -222,7 +222,7 @@
 </head>
 <body>
 
-    <a href="https://wa.me/5491112345678" class="whatsapp-float" target="_blank">
+    <a href="https://wa.me/5493584169727" class="whatsapp-float" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
 
@@ -281,14 +281,19 @@
             
             {% if messages %}
                 {% for message in messages %}
-                <div class="tracking-badge">
+                <div class="tracking-badge" style="background: var(--coyote-neon); color: #000;">
                     <i class="fas fa-truck-moving fa-beat"></i> {{ message }}
                 </div>
                 {% endfor %}
                 
+                <div style="background: #fff3cd; border: 2px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; color: #856404; text-align: center;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>IMPORTANTE:</strong> Para ver el recorrido en vivo, asegurate de tener el GPS activo en tu celular y haber aceptado los permisos de ubicación en este sitio web.
+                </div>
+
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <a href="https://wa.me/5491112345678" target="_blank" style="background: var(--whatsapp-green); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 10px;">
-                        <i class="fab fa-whatsapp"></i> ENVIAR DATOS POR WHATSAPP
+                    <a href="https://wa.me/5493584169727" target="_blank" style="background: var(--whatsapp-green); color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-whatsapp"></i> AVISAR POR WHATSAPP AL DUEÑO
                     </a>
                 </div>
 
@@ -366,6 +371,9 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         {% if messages %}
+            // Esto hace que la página baje sola hasta la sección del mapa apenas carga si se envió la solicitud
+            window.location.hash = "contact";
+
             // MODO SEGUIMIENTO DINÁMICO
             var latCli = parseFloat("{{ pedido.latitud|unlocalize }}");
             var lngCli = parseFloat("{{ pedido.longitud|unlocalize }}");
@@ -385,7 +393,6 @@
             });
 
             function actualizarPosicionReal() {
-                // Consultamos la API de seguimiento (definida en urls.py)
                 fetch(`/api/seguimiento/${solicitudId}/`)
                     .then(response => response.json())
                     .then(data => {
@@ -393,15 +400,12 @@
                             var newPos = [data.latitud_coyote, data.longitud_coyote];
                             
                             if (markerCoyote === null) {
-                                // Si no existe el Coyote en el mapa, lo creamos
                                 markerCoyote = L.marker(newPos, {icon: gruaIcon}).addTo(map)
                                                 .bindPopup("El Coyote está en camino").openPopup();
                             } else {
-                                // Si ya existe, lo movemos a la nueva posición
                                 markerCoyote.setLatLng(newPos);
                             }
 
-                            // Ajustamos el zoom para ver a ambos
                             var bounds = L.latLngBounds([[latCli, lngCli], newPos]);
                             map.fitBounds(bounds, {padding: [50, 50]});
                         }
@@ -409,12 +413,11 @@
                     .catch(err => console.error("Error siguiendo al Coyote:", err));
             }
 
-            // Actualizar cada 5 segundos
             setInterval(actualizarPosicionReal, 5000);
             actualizarPosicionReal();
 
         {% else %}
-            // MODO FORMULARIO (TAL CUAL LO TENÍAS)
+            // MODO FORMULARIO
             var marker = L.marker([-34.6037, -58.3816], { draggable: true }).addTo(map);
             function updateCoords(lat, lng) {
                 document.getElementById('lat').value = lat;
@@ -435,6 +438,10 @@
                         map.setView([lat, lng], 17);
                         marker.setLatLng([lat, lng]);
                         updateCoords(lat, lng);
+                    }, function(error) {
+                        if (error.code == error.PERMISSION_DENIED) {
+                            alert("Por favor, habilita el GPS para que podamos ubicarte.");
+                        }
                     });
                 }
             }

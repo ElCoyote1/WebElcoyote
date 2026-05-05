@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--7zz*^sov_g8vyp=vq21eiis5&q5=c@xsb!(izwmn&3dx)h=g!')
 
 # DEBUG: Lo dejamos en True para que veas la pantalla amarilla si algo falla
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',

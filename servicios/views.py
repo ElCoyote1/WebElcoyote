@@ -1,5 +1,6 @@
 import json
 import requests
+import os  # Necesario para leer la API KEY desde Render
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
@@ -11,10 +12,17 @@ def avisar_al_dueno(pedido, request):
     """
     Toma los datos del pedido recién creado y envía un WhatsApp al dueño.
     """
-    # 1. Datos del dueño (Configuración fija)
-    telefono_dueno = "5493584169727"  # El número que me pasaste (dueño de la página)
-    api_key = "12345"       # <--- PEGA AQUÍ LA CLAVE QUE LE DIO EL BOT AL DUEÑO
+    # 1. Datos del dueño
+    telefono_dueno = "5493584163655"
     
+    # Buscamos la clave en las variables de entorno de Render. 
+    # Si no existe, usamos la temporal para que no explote.
+    api_key = os.getenv('WHATSAPP_API_KEY', '8706117')
+    
+    if api_key == '12345':
+        print("⚠️ DEBUG: WhatsApp no enviado (Clave por defecto). Configura WHATSAPP_API_KEY en Render.")
+        return
+
     # 2. Generar el link al mapa dinámicamente
     dominio = request.get_host() 
     protocolo = "https" if request.is_secure() else "http"
@@ -39,7 +47,7 @@ def avisar_al_dueno(pedido, request):
     
     try:
         # Enviamos la petición al bot para que despache el WhatsApp
-        requests.get(url_api, params=params)
+        requests.get(url_api, params=params, timeout=10)
     except Exception as e:
         print(f"Error de conexión con WhatsApp: {e}")
 
@@ -54,28 +62,36 @@ def home(request):
         lng = request.POST.get('longitud')
 
         # 1. Creamos el pedido
-        nuevo_pedido = Solicitud.objects.create(
-            vehiculo=vehiculo,
-            tipo=tipo,
-            ubicacion=ubicacion,
-            descripcion=descripcion,
-            latitud=lat,
-            longitud=lng,
-            cliente=request.user if request.user.is_authenticated else None
-        )
+        try:
+            nuevo_pedido = Solicitud.objects.create(
+                vehiculo=vehiculo,
+                tipo=tipo,
+                ubicacion=ubicacion,
+                descripcion=descripcion,
+                latitud=lat,
+                longitud=lng,
+                cliente=request.user if request.user.is_authenticated else None
+            )
+        except Exception as e:
+            print(f"Error al crear el pedido: {e}")
+            messages.error(request, "Hubo un error al procesar tu solicitud. Intentalo de nuevo.")
+            return redirect('home')
 
-        # 2. INTENTO DE WHATSAPP (Si falla, no rompe la página)
+        # 2. INTENTO DE WHATSAPP (Envoltorio de seguridad total)
         try:
             avisar_al_dueno(nuevo_pedido, request)
         except Exception as e:
-            # Esto solo sale en la consola de Render, el usuario no ve el error
-            print(f"DEBUG: El WhatsApp no se envió pero el pedido sigue: {e}")
+            print(f"DEBUG: Error en la función avisar_al_dueno: {e}")
 
         # 3. Éxito y Renderizado
-        messages.success(request, "Solicitud enviada con éxito. Seguimiento activado.")
+        # Agregamos el mensaje largo que me pediste para el cartel amarillo del HTML
+        messages.success(request, "Solicitud enviada con éxito. Pronto tu solicitud será aceptada y se te mostrará en vivo el recorrido de tu auxilio.")
+        
+        # Pasamos el 'pedido' al contexto para que el JS del mapa sepa a quién seguir
         return render(request, 'servicios/home.html', {'pedido': nuevo_pedido})
 
     return render(request, 'servicios/home.html')
+
 
 # 2. VISTA PARA EL PANEL DEL CHOFER: Donde el chofer comparte su GPS
 def panel_chofer(request, solicitud_id):
