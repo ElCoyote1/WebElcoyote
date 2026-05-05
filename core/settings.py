@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--7zz*^sov_g8vyp=vq21eiis5&q5=c@xsb!(izwmn&3dx)h=g!')
 
 # DEBUG: En Render debe ser False para que sea seguro
-DEBUG = 'RENDER' not in os.environ
+DEBUG = True
 
 # ALLOWED_HOSTS: Permitimos localhost y el dominio que te de Render
 ALLOWED_HOSTS = []
